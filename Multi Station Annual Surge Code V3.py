@@ -1,5 +1,8 @@
 # @author: John McManus
+# @author: Michael Fenster
+# @author: Rachele Dominguez
 # @date 03/11/2023
+
 # © 2023. This work is licensed under a CC BY-NC-SA 4.0 license
 # Program to compute Storms and Annual SEPI
 
