@@ -1,6 +1,10 @@
 # @author: John McManus
-# @date 03/27/2023
+# @author: Michael Fenster
+# @author: Rachele Dominguez
+
+# @date 06/12/2023
 # © 2023. This work is licensed under a CC BY-NC-SA 4.0 license
+
 # Program to calculate the storm and SEPI data using annual surge thresholds
 
 # Import the datetime, timedelta, and date classes
