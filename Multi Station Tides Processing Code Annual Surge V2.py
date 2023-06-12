@@ -1,7 +1,7 @@
 # @author: John McManus
-# @date 03/11/2023
+# @date 03/27/2023
 # © 2023. This work is licensed under a CC BY-NC-SA 4.0 license
-# Program to compute Storms and Annual SEPI using a single surge threshold
+# Program to calculate the storm and SEPI data using annual surge thresholds
 
 # Import the datetime, timedelta, and date classes
 from datetime import datetime, timedelta, date
@@ -13,24 +13,14 @@ from tideData import tideData, stormData
 import statistics
 
 def main():
+   
    # A boolean variable used to turn print statements used during debugging on and off
    DEBUG = False
    
-   # The list of station names 
+   # The list of station names to be processed
    stationNM = ["Portland", "Boston", "Montauk", "The Battery", "Sandy Hook", "Sewells Pt", "Wilmington NC", 
                "Charleston SC", "Fernandina Beach", "Key West", "Newport", "Atlantic City-A", "Atlantic City-B"]
    
-   # Prompt the user for the number of standard deviations to use in the surge threshold calculations
-   # the default is 2.0.
-   print("The surge threshold is calculated as: surgeThreshold = (standardDevSurge * n) + averageSurge")
-   print("press the <Enter> key to use the default value of 2.0")
-   
-   usrInput = (input("Enter a value for value for n: "))
-   if usrInput != "":
-      numStDev = float(usrInput)
-   else:
-      numStDev = 2.0   
-    
    # For each station in the list
    for element in stationNM:
       
@@ -40,32 +30,46 @@ def main():
       
       print("Processing %s station" % element)
       
-      # File containing the Mean High Water data
-      inFile2 = open(element + "-MHW.csv", "r") 
+      # Open the file containing the storm threshold
+      inFile2 = open(element + "-MHW.csv", "r")
+      
+      # Open the file containing the annual Surge thresholds
+      inFile3 = open(element + "AnnualSurge.csv", "r")       
       
       # Open the output files
       outFile3 = open(element + "FinalStorm.csv", "w")
       outFile4 = open(element + "Annual SEPI.csv", "w")
       
-      
-      # Read the storm threshold input file and store the values in the list: thresholdList
+      # Read the storm threshold input file and store the values in a list
       thresholdList = list()
       
-      # read the file header
+      # Read the header
       header1 = inFile2.readline().strip()
       
-      # For each line in the file
+      # For each line of data in the file
       for line in inFile2:
          line = line.strip()
          elements = line.split(",")
-         
-         # Create a threshold data object
          temp = Threshold(int(elements[0]), float(elements[1]))
+         
          if DEBUG:
             print(temp)
-         
-         # Append the threshold object to the list.
          thresholdList.append(temp)
+         
+      # Read the Surge threshold input file and store the values in a list
+      surgeThresholdList = list()
+      
+      # Read the header   
+      header2 = inFile3.readline().strip()
+      
+      # For each line of data in the file
+      for line in inFile3:
+         line = line.strip()
+         elements = line.split(",")
+         temp = Threshold(int(elements[0]), float(elements[3]))
+         if DEBUG:
+            print(temp)
+         surgeThresholdList.append(temp)      
       
       # if DEBUG = True: Open the temp files to write data
       if DEBUG:
@@ -73,23 +77,27 @@ def main():
          outFile2 = open(element + "TEMPStorm.csv", "w")  
       
       # Read the input file headers from the raw data file
+      # containing the water levels and surge data
       header1 = inFile.readline().strip()
       header2 = inFile.readline().strip()
       
       print(header1)
       print(header2)
       
+      # Initialize the lists to store the preliminary data for processing
       dataList = []
       surgeList = []
       preStormList = []
       stormList = []
       
-      # For each line it the data file
+      # For each line of data in the water level and surge datafile
       for line in inFile:
          line = line.strip()
          line = line.split(",")
+         
+         # there are not four elements of data, data is missing
          if len(line) != 4:
-            print("Invalid line of data, elements are missing",  line)
+            print("Missing data element in the file",  line)
          
          # get the first element (month-date-year) from the line
          dateTime = line[0].split()
@@ -116,36 +124,21 @@ def main():
             
             if line[3] != "":
                surge = float(line[3])
-               surgeList.append(surge)
             else:
                surge = 0.0 
                
             currentLine = tideData(rawDateTime, prediction, measured, surge)
             dataList.append(currentLine)
       
-      print(dataList[0]._dateTime.year)
-      
-      # Calculate the single surge threshold      
-      averageSurge = sum(surgeList) / len(surgeList)
-      standardDevSurge = statistics.stdev(surgeList)
-      surgeThreshold = (standardDevSurge * numStDev) + averageSurge
+      print(dataList[0]._dateTime.year, dataList[0]._surge)
       
       if DEBUG:
-         print("The date - time list has %s elements" % len(dataList))
-         print("The surge list has %s elements" % len(surgeList))
-         print("The average of the surge values = %f" % averageSurge)
-         print("The standard deviation of the surge values = %f" % standardDevSurge)
-         print("The surge threshold = %f" % surgeThreshold)
+         print("the date - time list has %s elements" % len(dataList))
       
-      # Clear the surgeList to release the memory
-      surgeList = []
-      
-      # Index for the value read from the file that represents the storm threshold
+      # Set the threshold index to 0 value. 
       thresholdIndex = 0
       
-      # for each item in the data list:
       for i in range(len(dataList)):
-         # If the year has changed, update the threshold index by 1
          if dataList[i]._dateTime.year > thresholdList[thresholdIndex].year:
             thresholdIndex = thresholdIndex + 1
             if DEBUG:
@@ -153,7 +146,7 @@ def main():
                
          # if the surge is > the surge threshold and the verified (measured) value is > 0
          # compute the residual as verfied * surge
-         if dataList[i]._surge > surgeThreshold and dataList[i]._measured > thresholdList[thresholdIndex].threshold:
+         if dataList[i]._surge > surgeThresholdList[thresholdIndex].threshold and dataList[i]._measured > thresholdList[thresholdIndex].threshold:
             dataList[i]._residual =  dataList[i]._measured * dataList[i]._surge
             #add the Data to the prestorm list for processing
             preStormList.append(dataList[i])
@@ -162,7 +155,7 @@ def main():
          if DEBUG:
             outFile.write(str(dataList[i]))
       
-      # Clear the dataList to release the memory
+      # Clear the dataList
       dataList = []
       
       # Process the data to identify storms
@@ -195,11 +188,8 @@ def main():
          end = preStormList[i-1]._dateTime
          temp = stormData(start, end, sepi) 
          stormList.append(temp)
-         
          if DEBUG:
             outFile2.write(str(temp))
-         
-         # set sepi to 0
          sepi = 0
          if i < len(preStormList):
             start = preStormList[i]._dateTime
@@ -209,19 +199,15 @@ def main():
       outFile3.write("Start Date, Storm SEPI, Time From Previous Storm \n") 
       outFile3.write("%s, %f, %s \n" % (stormList[0]._startDate, stormList[0]._SEPI, stormList[0]._timeFromPrevious))
       
-      # For each element in the storm list
+      # For each storm in the stormList
       for i in range (1, len(stormList)):
          stormList[i]._timeFromPrevious = stormList[i]._startDate - stormList[i-1]._endDate
          
          # Extract the days component from the time delta object
          days = stormList[i]._timeFromPrevious.days
-         
-         # compute the partial day value
          seconds = stormList[i]._timeFromPrevious.seconds
          partialDay = seconds/86400
          days = days + partialDay
-         
-         # Write the  startdate, SEPI and duration data (days) to the output file
          outFile3.write("%s, %f, %f \n" % (stormList[i]._startDate, stormList[i]._SEPI, days))
          
       # Write the number of storms in a year and the annual SEPI (sum of the storm Sepi)
@@ -230,7 +216,7 @@ def main():
       stormCount = 0
       annualSEPI = 0
       
-      # Forn each element in the storm list:
+      # For each storm in the stormList
       for i in range (0, len(stormList)):
          if stormList[i]._startDate.year == currentYear:
             stormCount = stormCount + 1
@@ -242,7 +228,7 @@ def main():
             annualSEPI = stormList[i]._SEPI
       outFile4.write("%s, %d, %f \n" % (currentYear, stormCount, annualSEPI))
       
-      # Close the input and output files   
+      # Close the input files   
       inFile.close()
       outFile3.close()
       outFile4.close()
@@ -260,14 +246,14 @@ class Threshold():
    def __init__(self, year, threshold):
       self.year = year
       self.threshold = threshold
-
+   
    # equality for the Threshold objects
    def __eq__(self, other):
       return (self.year == other.year and self.threshold == other.threshold)
    
-   # repr for the threshold class
+   # repr for the threshold objects
    def __repr__(self):
-      return("year: %s, Threshold: %f" % (self.year, self.threshold))   
+      return("%s, %f" % (self.year, self.threshold))   
 
 # Call the Main Function
 main()
