@@ -1,3 +1,4 @@
+# DOI 10.5281/zenodo.8248186
 # CoastalSedsCode
 Python code for STORMINESS Research
 This code accesses the NOAA web services to gather data from multiple tidal stations
@@ -23,3 +24,6 @@ The collection of fifteen programs forms a pipeline that:
   a.	tideData.py
   
 The break in the Atlantic City data in 1970 requires that we treat Atlantic City as a special case. That is why some of the programs have three variants: one for Atlantic City from 1922 to the end of 1969, one for Atlantic City starting in 1971, and one for all the other stations.
+
+
+[def]: image.png
