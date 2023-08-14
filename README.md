@@ -1,5 +1,6 @@
 # DOI 10.5281/zenodo.8248186
 # CoastalSedsCode
+# © 2023. This work is licensed under a CC BY-NC-SA 4.0 license
 Python code for STORMINESS Research
 This code accesses the NOAA web services to gather data from multiple tidal stations
 The collection of fifteen programs forms a pipeline that: 
